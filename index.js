@@ -18,7 +18,8 @@ function restricted(req, res, next) {
 	let { username, password } = req.headers;
 
 	if (username && password) {
-		Users.findBy({ username })
+		db('users')
+			.where('username', username)
 			.first()
 			.then(user => {
 				// check that passwords match
@@ -40,19 +41,49 @@ server.get('/', (req, res) => {
 	res.send('Sanity Check');
 });
 
-server.get('/api/users', async (req, res) => {
+server.get('/api/users', restricted, async (req, res) => {
 	try {
-	} catch {}
+		const users = await db('users');
+		res.status(200).json(users);
+	} catch (error) {
+		res.status(500).json({ message: 'No credentials provided' });
+	}
 });
 
 server.post('/api/register', async (req, res) => {
-	try {
-	} catch {}
+	let { username, password } = req.body;
+	const hash = bcrypt.hashSync(password, 16);
+	password = hash;
+	if (username && password) {
+		try {
+			const user = await db('users').insert({ username, password });
+			res.status(201).json({ message: 'successfully registered', user });
+		} catch (error) {
+			res.status(500).json({ message: 'No credentials provided' });
+		}
+	} else {
+	}
 });
 
 server.post('/api/login', async (req, res) => {
-	try {
-	} catch {}
+	let { username, password } = req.body;
+
+	if (username && password) {
+		try {
+			const user = await db('users')
+				.where('username', username)
+				.first();
+			if (user && bcrypt.compareSync(password, password)) {
+				res.status(200).json({ message: `Welcome ${username}!` });
+			} else {
+				res.status(401).json({ message: 'Invalid Credentials' });
+			}
+		} catch (error) {
+			res.status(500).json({ message: 'Server error' });
+		}
+	} else {
+		res.status(500).json({ message: 'No credentials provided' });
+	}
 });
 
 const port = process.env.PORT || 5000;
