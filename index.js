@@ -15,7 +15,7 @@ server.use(morgan('dev'));
 server.use(express.json());
 
 function restricted(req, res, next) {
-	let { username, password } = req.headers;
+	let { username, password } = req.body;
 
 	if (username && password) {
 		db('users')
@@ -41,7 +41,7 @@ server.get('/', (req, res) => {
 	res.send('Sanity Check');
 });
 
-server.get('/api/users', restricted, async (req, res) => {
+server.get('/api/users',restricted, async (req, res) => {
 	try {
 		const users = await db('users');
 		res.status(200).json(users);
@@ -73,7 +73,7 @@ server.post('/api/login', async (req, res) => {
 			const user = await db('users')
 				.where('username', username)
 				.first();
-			if (user && bcrypt.compareSync(password, password)) {
+			if (user && bcrypt.compareSync(password, user.password)) {
 				res.status(200).json({ message: `Welcome ${username}!` });
 			} else {
 				res.status(401).json({ message: 'Invalid Credentials' });
@@ -83,6 +83,15 @@ server.post('/api/login', async (req, res) => {
 		}
 	} else {
 		res.status(500).json({ message: 'No credentials provided' });
+	}
+});
+
+server.get('/api/brewery', async (req, res) => {
+	try {
+		const brew = await db('brewery');
+		res.status(200).json(brew);
+	} catch {
+		res.status(500).json({ message: 'Unable to get breweries' });
 	}
 });
 
