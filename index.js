@@ -59,7 +59,6 @@ server.post('/api/register', async (req, res) => {
 		try {
 			const user = await db('users').insert({ username, password });
 			req.session.user = user;
-			console.log(req);
 
 			res.status(201).json({ message: 'successfully registered', user });
 		} catch (error) {
@@ -79,6 +78,7 @@ server.post('/api/login', async (req, res) => {
 				.first();
 			if (user && bcrypt.compareSync(password, user.password)) {
 				req.session.user = user;
+				console.log('login', req.session);
 
 				res.status(200).json({ message: `Welcome ${username}!` });
 			} else {
