@@ -33,7 +33,7 @@ const sessionConfig = {
 };
 
 server.use(helmet());
-server.use(cors());
+server.use(cors({ credentials: true, origin: true }));
 server.use(morgan('dev'));
 server.use(express.json());
 server.use(session(sessionConfig));
@@ -58,7 +58,8 @@ server.post('/api/register', async (req, res) => {
 	if (username && password) {
 		try {
 			const user = await db('users').insert({ username, password });
-			req.session.username = user;
+			req.session.user = user;
+			console.log(req);
 
 			res.status(201).json({ message: 'successfully registered', user });
 		} catch (error) {
@@ -77,7 +78,7 @@ server.post('/api/login', async (req, res) => {
 				.where('username', username)
 				.first();
 			if (user && bcrypt.compareSync(password, user.password)) {
-				req.session.username = user.username;
+				req.session.user = user;
 
 				res.status(200).json({ message: `Welcome ${username}!` });
 			} else {
